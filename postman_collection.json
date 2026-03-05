@@ -1,0 +1,48 @@
+{
+  "info": {
+    "name": "Conversational AI System API",
+    "_postman_id": "00000000-0000-0000-0000-000000000001",
+    "description": "Postman collection for testing the FastAPI conversational backend.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8000/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["health"]
+        }
+      }
+    },
+    {
+      "name": "Chat (REST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"session_id\": null,\n  \"message\": \"Hello, I have a question about admissions.\",\n  \"reset_session\": false\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/chat",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8000",
+          "path": ["api", "chat"]
+        }
+      }
+    }
+  ]
+}
+

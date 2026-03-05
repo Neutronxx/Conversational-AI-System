@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ollama WebSocket Chat</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        color-scheme: dark light;
+        --bg: #050816;
+        --bg-elevated: #0f172a;
+        --accent: #38bdf8;
+        --accent-soft: rgba(56, 189, 248, 0.1);
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --danger: #f97373;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          "Segoe UI", sans-serif;
+        background: radial-gradient(circle at top, #1e293b 0, #020617 55%);
+        color: var(--text);
+      }
+
+      .shell {
+        width: min(900px, 100vw - 2rem);
+        height: min(640px, 100vh - 2rem);
+        background: linear-gradient(145deg, #020617, #020617);
+        border-radius: 18px;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+        box-shadow:
+          0 24px 60px rgba(15, 23, 42, 0.85),
+          0 0 0 1px rgba(15, 23, 42, 0.9);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .shell-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.75rem 1rem;
+        background: radial-gradient(circle at 0 0, #1f2937 0, #020617 55%);
+        border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+      }
+
+      .traffic-lights {
+        display: flex;
+        gap: 0.35rem;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #4b5563;
+      }
+
+      .dot.red {
+        background: #f97373;
+      }
+
+      .dot.amber {
+        background: #fbbf24;
+      }
+
+      .dot.green {
+        background: #4ade80;
+      }
+
+      .title {
+        font-size: 0.8rem;
+        color: var(--muted);
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+      }
+
+      .status-pill {
+        border-radius: 999px;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.7rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: rgba(34, 197, 94, 0.12);
+        color: #4ade80;
+        border: 1px solid rgba(34, 197, 94, 0.4);
+      }
+
+      .status-pill[data-status="disconnected"] {
+        background: rgba(249, 115, 129, 0.08);
+        color: var(--danger);
+        border-color: rgba(248, 113, 113, 0.5);
+      }
+
+      .status-indicator {
+        width: 7px;
+        height: 7px;
+        border-radius: 999px;
+        background: #4ade80;
+      }
+
+      .status-pill[data-status="disconnected"] .status-indicator {
+        background: var(--danger);
+      }
+
+      .main {
+        flex: 1;
+        display: grid;
+        grid-template-rows: 1.2fr auto;
+        gap: 0;
+        background:
+          radial-gradient(circle at top left, #1d2535 0, transparent 55%),
+          radial-gradient(circle at bottom right, #020617 0, #020617 55%);
+      }
+
+      .messages {
+        padding: 1rem 1.25rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+
+      .messages::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .messages::-webkit-scrollbar-thumb {
+        background: rgba(148, 163, 184, 0.6);
+        border-radius: 999px;
+      }
+
+      .bubble {
+        max-width: 72%;
+        border-radius: 14px;
+        padding: 0.6rem 0.8rem;
+        font-size: 0.9rem;
+        line-height: 1.45;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        box-shadow: 0 10px 25px rgba(15, 23, 42, 0.55);
+      }
+
+      .bubble.user {
+        align-self: flex-end;
+        background: linear-gradient(135deg, #38bdf8, #6366f1);
+        color: #0b1120;
+      }
+
+      .bubble.assistant {
+        align-self: flex-start;
+        background: linear-gradient(145deg, #020617, #020617);
+        border: 1px solid rgba(148, 163, 184, 0.4);
+      }
+
+      .meta-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.1rem 1.3rem 0.35rem;
+        font-size: 0.7rem;
+        color: var(--muted);
+      }
+
+      .input-row {
+        padding: 0.7rem 0.9rem;
+        border-top: 1px solid rgba(148, 163, 184, 0.3);
+        background: radial-gradient(circle at 0 0, #111827 0, #020617 60%);
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+      }
+
+      .input-inner {
+        display: flex;
+        gap: 0.55rem;
+      }
+
+      textarea {
+        flex: 1;
+        resize: none;
+        border-radius: 12px;
+        border: 1px solid rgba(148, 163, 184, 0.6);
+        background-color: rgba(15, 23, 42, 0.92);
+        color: var(--text);
+        font-family: inherit;
+        font-size: 0.9rem;
+        padding: 0.6rem 0.75rem;
+        min-height: 2.4rem;
+        max-height: 6rem;
+        outline: none;
+      }
+
+      textarea:focus-visible {
+        border-color: var(--accent);
+        box-shadow:
+          0 0 0 1px rgba(56, 189, 248, 0.7),
+          0 0 0 12px rgba(56, 189, 248, 0.05);
+      }
+
+      button {
+        border-radius: 999px;
+        border: none;
+        padding: 0 1.1rem;
+        background: linear-gradient(135deg, #38bdf8, #4f46e5);
+        color: #0b1120;
+        font-weight: 600;
+        font-size: 0.85rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        min-width: 3.6rem;
+        box-shadow:
+          0 12px 30px rgba(37, 99, 235, 0.6),
+          0 0 0 1px rgba(15, 23, 42, 0.9);
+        white-space: nowrap;
+      }
+
+      button[disabled] {
+        opacity: 0.55;
+        cursor: default;
+        box-shadow: none;
+      }
+
+      .hint-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.72rem;
+        color: var(--muted);
+      }
+
+      .chip {
+        padding: 0.15rem 0.55rem;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.55);
+        background: rgba(15, 23, 42, 0.85);
+        display: inline-flex;
+        gap: 0.35rem;
+        align-items: center;
+      }
+
+      .kbd {
+        padding: 0.05rem 0.32rem;
+        border-radius: 4px;
+        border: 1px solid rgba(148, 163, 184, 0.7);
+        font-family: "SF Mono", ui-monospace, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 0.7rem;
+      }
+
+      .error-text {
+        color: var(--danger);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header class="shell-header">
+        <div class="traffic-lights">
+          <span class="dot red"></span>
+          <span class="dot amber"></span>
+          <span class="dot green"></span>
+        </div>
+        <div class="title">Ollama · Phi WebSocket Chat</div>
+        <div class="status-pill" id="status-pill" data-status="disconnected">
+          <span class="status-indicator"></span>
+          <span id="status-label">Disconnected</span>
+        </div>
+      </header>
+      <main class="main">
+        <div class="messages" id="messages"></div>
+        <div>
+          <div class="meta-row">
+            <span id="meta-label">Ready when you are.</span>
+            <span id="meta-model">Model: qwen2.5 (via Ollama)</span>
+          </div>
+          <div class="input-row">
+            <div class="input-inner">
+              <textarea
+                id="input"
+                rows="1"
+                placeholder="Ask me anything…"
+              ></textarea>
+              <button id="send">Send</button>
+            </div>
+            <div class="hint-row">
+              <span>
+                <span class="chip">
+                  <span class="kbd">Enter</span> to send ·
+                  <span class="kbd">Shift</span> + <span class="kbd">Enter</span>
+                  for new line
+                </span>
+              </span>
+              <span id="error" class="error-text"></span>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+    <script>
+      // Always talk to the FastAPI backend on localhost:8000,
+      // regardless of how this HTML file is served.
+      const WS_URL = "ws://localhost:8000/ws/chat";
+
+      const messagesEl = document.getElementById("messages");
+      const inputEl = document.getElementById("input");
+      const sendBtn = document.getElementById("send");
+      const statusPill = document.getElementById("status-pill");
+      const statusLabel = document.getElementById("status-label");
+      const metaLabel = document.getElementById("meta-label");
+      const errorEl = document.getElementById("error");
+
+      let ws = null;
+      let sessionId =
+        window.localStorage.getItem("uniguide_session_id") || null;
+      let streamingAssistantBubble = null;
+
+      function setStatus(connected) {
+        statusPill.dataset.status = connected ? "connected" : "disconnected";
+        statusLabel.textContent = connected ? "Connected" : "Disconnected";
+        metaLabel.textContent = connected
+          ? "Streaming from local Ollama Qwen2.5."
+          : "Click into the window to reconnect if needed.";
+      }
+
+      function scrollToBottom() {
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }
+
+      function appendUserMessage(text) {
+        const bubble = document.createElement("div");
+        bubble.className = "bubble user";
+        bubble.textContent = text;
+        messagesEl.appendChild(bubble);
+        scrollToBottom();
+      }
+
+      function startAssistantMessage() {
+        const bubble = document.createElement("div");
+        bubble.className = "bubble assistant";
+        streamingAssistantBubble = bubble;
+        messagesEl.appendChild(bubble);
+        scrollToBottom();
+      }
+
+      function appendAssistantChunk(text) {
+        if (!streamingAssistantBubble) {
+          startAssistantMessage();
+        }
+        streamingAssistantBubble.textContent += text;
+        scrollToBottom();
+      }
+
+      function finishAssistantMessage() {
+        streamingAssistantBubble = null;
+      }
+
+      function setSession(id) {
+        sessionId = id;
+        window.localStorage.setItem("uniguide_session_id", id);
+      }
+
+      function resetSession() {
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          connect();
+        }
+        const id = sessionId || crypto.randomUUID();
+        setSession(id);
+        ws.send(
+          JSON.stringify({
+            type: "reset",
+            session_id: id,
+          }),
+        );
+        messagesEl.innerHTML = "";
+        streamingAssistantBubble = null;
+        errorEl.textContent = "";
+      }
+
+      function connect() {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          return;
+        }
+
+        errorEl.textContent = "";
+
+        try {
+          ws = new WebSocket(WS_URL);
+        } catch (e) {
+          errorEl.textContent = "Failed to create WebSocket: " + e.message;
+          return;
+        }
+
+        ws.onopen = () => {
+          setStatus(true);
+          if (sessionId) {
+            ws.send(JSON.stringify({ type: "ping", session_id: sessionId }));
+          }
+        };
+
+        ws.onmessage = (event) => {
+          let msg;
+          try {
+            msg = JSON.parse(event.data);
+          } catch {
+            // Backwards-compat or unexpected payload: show raw text.
+            appendAssistantChunk(String(event.data));
+            return;
+          }
+
+          const { type } = msg;
+
+          if (type === "session_reset") {
+            if (msg.session_id) {
+              setSession(msg.session_id);
+            }
+            return;
+          }
+
+          if (type === "start") {
+            if (msg.session_id) {
+              setSession(msg.session_id);
+            }
+            startAssistantMessage();
+            return;
+          }
+
+          if (type === "chunk") {
+            appendAssistantChunk(msg.content || "");
+            return;
+          }
+
+          if (type === "end") {
+            finishAssistantMessage();
+            return;
+          }
+
+          if (type === "error") {
+            errorEl.textContent = msg.error || "Unknown error.";
+            finishAssistantMessage();
+          }
+        };
+
+        ws.onerror = (event) => {
+          errorEl.textContent = "WebSocket error. Check backend / Ollama.";
+          console.error("WebSocket error", event);
+        };
+
+        ws.onclose = () => {
+          setStatus(false);
+          finishAssistantMessage();
+          setTimeout(() => {
+            if (!ws || ws.readyState === WebSocket.CLOSED) {
+              connect();
+            }
+          }, 1000);
+        };
+      }
+
+      function sendMessage() {
+        const text = inputEl.value.trim();
+        if (!text) return;
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+          errorEl.textContent = "Not connected to server.";
+          connect();
+          return;
+        }
+
+        errorEl.textContent = "";
+        appendUserMessage(text);
+        ws.send(
+          JSON.stringify({
+            type: "message",
+            payload: {
+              session_id: sessionId,
+              message: text,
+            },
+          }),
+        );
+        inputEl.value = "";
+        inputEl.focus();
+      }
+
+      sendBtn.addEventListener("click", sendMessage);
+
+      inputEl.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          sendMessage();
+        }
+      });
+
+      window.addEventListener("focus", () => {
+        if (!ws || ws.readyState === WebSocket.CLOSED) {
+          connect();
+        }
+      });
+
+      connect();
+
+      // Optional: expose reset for manual testing via browser console.
+      window.__resetSession = resetSession;
+    </script>
+  </body>
+</html>
+
