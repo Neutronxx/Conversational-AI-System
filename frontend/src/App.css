@@ -1,0 +1,234 @@
+.shell {
+  width: min(900px, 100vw - 2rem);
+  height: min(640px, 100vh - 2rem);
+  background: linear-gradient(145deg, #020617, #020617);
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  box-shadow:
+    0 24px 60px rgba(15, 23, 42, 0.85),
+    0 0 0 1px rgba(15, 23, 42, 0.9);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.shellHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: radial-gradient(circle at 0 0, #1f2937 0, #020617 55%);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.trafficLights {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #4b5563;
+}
+
+.dotRed {
+  background: #f97373;
+}
+
+.dotAmber {
+  background: #fbbf24;
+}
+
+.dotGreen {
+  background: #4ade80;
+}
+
+.title {
+  font-size: 0.8rem;
+  color: var(--muted);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.statusPill {
+  border-radius: 999px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.7rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.statusPillDisconnected {
+  background: rgba(249, 115, 129, 0.08);
+  color: var(--danger);
+  border-color: rgba(248, 113, 113, 0.5);
+}
+
+.statusIndicator {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: #4ade80;
+}
+
+.statusPillDisconnected .statusIndicator {
+  background: var(--danger);
+}
+
+.main {
+  flex: 1;
+  display: grid;
+  grid-template-rows: 1.2fr auto;
+  gap: 0;
+  background:
+    radial-gradient(circle at top left, #1d2535 0, transparent 55%),
+    radial-gradient(circle at bottom right, #020617 0, #020617 55%);
+}
+
+.messages {
+  padding: 1rem 1.25rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.6);
+  border-radius: 999px;
+}
+
+.bubble {
+  max-width: 72%;
+  border-radius: 14px;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.55);
+}
+
+.bubbleUser {
+  align-self: flex-end;
+  background: linear-gradient(135deg, #38bdf8, #6366f1);
+  color: #0b1120;
+}
+
+.bubbleAssistant {
+  align-self: flex-start;
+  background: linear-gradient(145deg, #020617, #020617);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+}
+
+.metaRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.1rem 1.3rem 0.35rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+
+.inputRow {
+  padding: 0.7rem 0.9rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.3);
+  background: radial-gradient(circle at 0 0, #111827 0, #020617 60%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.inputInner {
+  display: flex;
+  gap: 0.55rem;
+}
+
+.inputTextarea {
+  flex: 1;
+  resize: none;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  background-color: rgba(15, 23, 42, 0.92);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+  padding: 0.6rem 0.75rem;
+  min-height: 2.4rem;
+  max-height: 6rem;
+  outline: none;
+}
+
+.inputTextarea:focus-visible {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.7),
+    0 0 0 12px rgba(56, 189, 248, 0.05);
+}
+
+.sendBtn {
+  border-radius: 999px;
+  border: none;
+  padding: 0 1.1rem;
+  background: linear-gradient(135deg, #38bdf8, #4f46e5);
+  color: #0b1120;
+  font-weight: 600;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  min-width: 3.6rem;
+  box-shadow:
+    0 12px 30px rgba(37, 99, 235, 0.6),
+    0 0 0 1px rgba(15, 23, 42, 0.9);
+  white-space: nowrap;
+}
+
+.sendBtn:disabled {
+  opacity: 0.55;
+  cursor: default;
+  box-shadow: none;
+}
+
+.hintRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.chip {
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  background: rgba(15, 23, 42, 0.85);
+  display: inline-flex;
+  gap: 0.35rem;
+  align-items: center;
+}
+
+.kbd {
+  padding: 0.05rem 0.32rem;
+  border-radius: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.7);
+  font-family: "SF Mono", ui-monospace, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  font-size: 0.7rem;
+}
+
+.errorText {
+  color: var(--danger);
+}
